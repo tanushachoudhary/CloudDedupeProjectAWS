@@ -17,12 +17,12 @@ def get_file_hash(bucket, key):
     return hashlib.md5(file_data).hexdigest()
 
 def find_and_move_duplicates(bucket):
-    print(f"🔍 Scanning bucket: {bucket}")
+    print(f"Scanning bucket: {bucket}")
 
     # Get all objects
     response = s3.list_objects_v2(Bucket=bucket)
     if "Contents" not in response:
-        print("❌ No files found in bucket.")
+        print("No files found in bucket.")
         return
 
     seen_hashes = {}
@@ -35,28 +35,28 @@ def find_and_move_duplicates(bucket):
         if key.startswith(DUPLICATE_FOLDER):
             continue
 
-        print(f"📂 Checking file: {key}")
+        print(f"Checking file: {key}")
 
         file_hash = get_file_hash(bucket, key)
 
         if file_hash in seen_hashes:
-            print(f"⚠️ Duplicate found: {key} (same as {seen_hashes[file_hash]})")
+            print(f"Duplicate found: {key} (same as {seen_hashes[file_hash]})")
             duplicates.append(key)
         else:
             seen_hashes[file_hash] = key
 
     # Move duplicates
     if duplicates:
-        print("\n📦 Moving duplicates to 'duplicates/' folder...")
+        print("\nMoving duplicates to 'duplicates/' folder...")
         for dup in duplicates:
             new_key = DUPLICATE_FOLDER + dup.split("/")[-1]  # keep filename
             # Copy to duplicates folder
             s3.copy_object(Bucket=bucket, CopySource={"Bucket": bucket, "Key": dup}, Key=new_key)
             # Delete original
             s3.delete_object(Bucket=bucket, Key=dup)
-            print(f"✅ Moved: {dup} → {new_key}")
+            print(f"Moved: {dup} → {new_key}")
     else:
-        print("🎉 No duplicates found!")
+        print("No duplicates found!")
 
 if __name__ == "__main__":
     find_and_move_duplicates(BUCKET_NAME)
